@@ -1,0 +1,4 @@
+rewuiFlask
+flask_sqlalchemy
+opencv-python
+pyzbar
