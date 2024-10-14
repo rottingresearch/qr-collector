@@ -1,5 +1,5 @@
 # Use the official Python image from the Docker Hub
-FROM python:3.13.0-slim
+FROM python:3.10-slim
 
 # Copy requirements.txt to the container
 COPY requirements.txt requirements.txt
