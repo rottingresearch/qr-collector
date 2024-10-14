@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stored QR Codes</title>
+</head>
+<body>
+    <h1>Stored QR Codes</h1>
+    <ul>
+        {% for qr_code in qr_codes %}
+            <li>{{ qr_code.data }}</li>
+        {% endfor %}
+    </ul>
+    <a href="/">Back to Scanner</a>
+</body>
+</html>
