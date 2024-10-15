@@ -7,8 +7,8 @@ services:
       dockerfile: Dockerfile
     develop:
       watch:
-        - path: .
-          action: rebuild
+        - action: rebuild
+          path: .
     restart: unless-stopped
     ports:
       - "5200:5000"
