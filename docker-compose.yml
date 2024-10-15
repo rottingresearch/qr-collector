@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  qr-collector:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    develop:
+      watch:
+        - path: .
+          action: rebuild
+    restart: unless-stopped
+    ports:
+      - "5200:5000"
