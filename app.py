@@ -3,14 +3,16 @@ from flask import Flask, request, render_template, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///qr_codes.db'
+
+# Update the database URI to use PostgreSQL
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv(
+    'DATABASE_URL'
+)
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
-
 # Ensure the static/uploads directory exists
 os.makedirs('static/uploads', exist_ok=True)
-
 
 # Create the database tables within the application context
 with app.app_context():
@@ -21,15 +23,6 @@ class QRCode(db.Model):
     """Model for storing QR Codes."""
     id = db.Column(db.Integer, primary_key=True)
     data = db.Column(db.String(200), nullable=False)
-
-
-# Ensure the static/uploads directory exists
-os.makedirs('static/uploads', exist_ok=True)
-
-
-# Create the database tables within the application context
-with app.app_context():
-    db.create_all()
 
 
 @app.route('/')
