@@ -6,23 +6,28 @@ app = Flask(__name__)
 
 # Update the database URI to use PostgreSQL
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv(
-    'DATABASE_URL'
+    'DATABASE_URL', 'postgresql://username:password@localhost:5432/defaultdb'
 )
+
+if not app.config['SQLALCHEMY_DATABASE_URI']:
+    raise RuntimeError("DATABASE_URL environment variable is not set.")
+
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
 # Ensure the static/uploads directory exists
 os.makedirs('static/uploads', exist_ok=True)
 
-# Create the database tables within the application context
-with app.app_context():
-    db.create_all()
-
 
 class QRCode(db.Model):
     """Model for storing QR Codes."""
     id = db.Column(db.Integer, primary_key=True)
     data = db.Column(db.String(200), nullable=False)
+
+
+# Create the database tables within the application context
+with app.app_context():
+    db.create_all()
 
 
 @app.route('/')
