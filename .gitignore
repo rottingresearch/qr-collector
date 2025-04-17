@@ -31,3 +31,9 @@ google-services.json
 
 # Android Profiling
 *.hprof
+
+# .venv
+.venv
+/.venv
+.venv/
+.venv/*
