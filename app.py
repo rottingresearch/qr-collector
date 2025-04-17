@@ -53,8 +53,24 @@ def scan_qr_code():
     if file.filename == '':
         return 'No selected file', 400
 
-    # Process the uploaded file (existing functionality)
-    # ...
+    file_path = f'static/uploads/{file.filename}'
+    file.save(file_path)
+
+    # Process the uploaded file to extract QR code data
+    # (Assume you have logic here to extract `qr_data` from the image)
+    qr_data = "extracted_data_from_image"
+    # Replace with actual extraction logic
+
+    # Check if the QR code already exists
+    existing_qr_code = QRCode.query.filter_by(data=qr_data).first()
+    if existing_qr_code:
+        return 'QR code already exists', 400
+
+    new_qr_code = QRCode(data=qr_data)
+    db.session.add(new_qr_code)
+    db.session.commit()
+
+    return redirect(url_for('stored_qr_codes'))
 
 
 @app.route('/process_qr_code')
@@ -62,6 +78,11 @@ def process_qr_code():
     """Processes QR Code to Database."""
     data = request.args.get('data')
     if data:
+        # Check if the QR code already exists
+        existing_qr_code = QRCode.query.filter_by(data=data).first()
+        if existing_qr_code:
+            return 'QR code already exists', 400
+
         new_qr_code = QRCode(data=data)
         db.session.add(new_qr_code)
         db.session.commit()
