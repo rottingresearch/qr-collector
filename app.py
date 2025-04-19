@@ -22,7 +22,10 @@ os.makedirs('static/uploads', exist_ok=True)
 class QRCode(db.Model):
     """Model for storing QR Codes."""
     id = db.Column(db.Integer, primary_key=True)
-    data = db.Column(db.String(200), nullable=False)
+    url = db.Column(db.String(200), nullable=False)
+    timestamp = db.Column(
+        db.DateTime, nullable=False, server_default=db.func.now()
+    )
 
 
 # Create the database tables within the application context
