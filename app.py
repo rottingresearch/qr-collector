@@ -6,8 +6,7 @@ app = Flask(__name__)
 
 # Update the database URI to use PostgreSQL
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv(
-    'DATABASE_URL', 'postgresql://username:password@localhost:5432/defaultdb'
-)
+    'DATABASE_URL')
 
 if not app.config['SQLALCHEMY_DATABASE_URI']:
     raise RuntimeError("DATABASE_URL environment variable is not set.")
