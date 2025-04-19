@@ -78,14 +78,14 @@ def scan_qr_code():
 @app.route('/process_qr_code')
 def process_qr_code():
     """Processes QR Code to Database."""
-    data = request.args.get('data')
-    if data:
+    url = request.args.get('data')
+    if url:
         # Check if the QR code already exists
-        existing_qr_code = QRCode.query.filter_by(data=data).first()
+        existing_qr_code = QRCode.query.filter_by(url=url).first()
         if existing_qr_code:
             return 'QR code already exists', 400
 
-        new_qr_code = QRCode(data=data)
+        new_qr_code = QRCode(url=url)
         db.session.add(new_qr_code)
         db.session.commit()
         return redirect(url_for('stored_qr_codes'))
