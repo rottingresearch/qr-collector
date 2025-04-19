@@ -9,9 +9,8 @@
     <h1>Stored QR Codes</h1>
     <ul>
         {% for qr_code in qr_codes %}
-            <li>{{ qr_code.data }}</li>
+            <li>{{ qr_code.url }} - {{ qr_code.timestamp }}</li>
         {% endfor %}
     </ul>
-    <a href="/">Back to Scanner</a>
 </body>
 </html>
