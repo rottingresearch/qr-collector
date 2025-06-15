@@ -1,5 +1,6 @@
 import os
 from flask import Flask, request, render_template, redirect, url_for
+from werkzeug.utils import secure_filename
 from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__)
@@ -55,7 +56,8 @@ def scan_qr_code():
     if file.filename == '':
         return 'No selected file', 400
 
-    file_path = f'static/uploads/{file.filename}'
+    sanitized_filename = secure_filename(file.filename)
+    file_path = f'static/uploads/{sanitized_filename}'
     file.save(file_path)
 
     # Process the uploaded file to extract QR code data
