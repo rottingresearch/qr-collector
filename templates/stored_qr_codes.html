@@ -4,13 +4,367 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Stored QR Codes</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 3rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 50px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            color: white;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        .btn-secondary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(245, 87, 108, 0.3);
+        }
+
+        .qr-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .qr-item {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 20px;
+            border: 1px solid #e9ecef;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .qr-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        .qr-content {
+            word-break: break-all;
+            font-size: 0.95rem;
+            line-height: 1.5;
+            margin-bottom: 15px;
+            padding: 15px;
+            background: white;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+
+        .qr-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.85rem;
+            color: #6c757d;
+            margin-top: 15px;
+        }
+
+        .qr-timestamp {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .qr-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-small {
+            padding: 5px 12px;
+            font-size: 0.8rem;
+            border-radius: 20px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .btn-copy {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-copy:hover {
+            background: #218838;
+        }
+
+        .btn-delete {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-delete:hover {
+            background: #c82333;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6c757d;
+        }
+
+        .empty-state i {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            opacity: 0.3;
+        }
+
+        .empty-state h3 {
+            margin-bottom: 10px;
+            color: #495057;
+        }
+
+        .stats {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .stats h3 {
+            margin-bottom: 10px;
+        }
+
+        .stats-number {
+            font-size: 2.5rem;
+            font-weight: bold;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 15px;
+            }
+
+            .header h1 {
+                font-size: 2.5rem;
+            }
+
+            .qr-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .nav-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .btn {
+                width: 100%;
+                max-width: 300px;
+                justify-content: center;
+            }
+        }
+
+        .copy-success {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #28a745;
+            color: white;
+            padding: 15px 20px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            transform: translateX(400px);
+            transition: transform 0.3s ease;
+            z-index: 1000;
+        }
+
+        .copy-success.show {
+            transform: translateX(0);
+        }
+    </style>
 </head>
 <body>
-    <h1>Stored QR Codes</h1>
-    <ul>
-        {% for qr_code in qr_codes %}
-            <li>{{ qr_code.url }} - {{ qr_code.timestamp }}</li>
-        {% endfor %}
-    </ul>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-archive"></i> Saved QR Codes</h1>
+            <p>Your collection of scanned QR codes</p>
+        </div>
+
+        <div class="card">
+            <div class="nav-buttons">
+                <a href="/" class="btn btn-primary">
+                    <i class="fas fa-camera"></i>
+                    Scan New Code
+                </a>
+                <button id="clear-all" class="btn btn-secondary" onclick="clearAllCodes()">
+                    <i class="fas fa-trash"></i>
+                    Clear All
+                </button>
+            </div>
+
+            {% if qr_codes %}
+                <div class="stats">
+                    <h3>Total Saved Codes</h3>
+                    <div class="stats-number">{{ qr_codes|length }}</div>
+                </div>
+
+                <div class="qr-grid">
+                    {% for qr_code in qr_codes %}
+                    <div class="qr-item">
+                        <div class="qr-content">
+                            {{ qr_code.url }}
+                        </div>
+                        <div class="qr-meta">
+                            <div class="qr-timestamp">
+                                <i class="fas fa-clock"></i>
+                                {{ qr_code.timestamp.strftime('%Y-%m-%d %H:%M') }}
+                            </div>
+                            <div class="qr-actions">
+                                <button class="btn-small btn-copy" onclick="copyToClipboard('{{ qr_code.url }}')">
+                                    <i class="fas fa-copy"></i>
+                                    Copy
+                                </button>
+                                {% if qr_code.url.startswith('http') %}
+                                <a href="{{ qr_code.url }}" target="_blank" class="btn-small" style="background: #007bff; color: white;">
+                                    <i class="fas fa-external-link-alt"></i>
+                                    Open
+                                </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-qrcode"></i>
+                    <h3>No QR codes saved yet</h3>
+                    <p>Start scanning QR codes to see them here!</p>
+                    <a href="/" class="btn btn-primary" style="margin-top: 20px;">
+                        <i class="fas fa-camera"></i>
+                        Scan Your First Code
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div id="copy-success" class="copy-success">
+        <i class="fas fa-check"></i> Copied to clipboard!
+    </div>
+
+    <script>
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(function() {
+                showCopySuccess();
+            }).catch(function(err) {
+                console.error('Could not copy text: ', err);
+                // Fallback for older browsers
+                const textArea = document.createElement("textarea");
+                textArea.value = text;
+                document.body.appendChild(textArea);
+                textArea.focus();
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    showCopySuccess();
+                } catch (err) {
+                    console.error('Fallback: Could not copy text: ', err);
+                }
+                document.body.removeChild(textArea);
+            });
+        }
+
+        function showCopySuccess() {
+            const successEl = document.getElementById('copy-success');
+            successEl.classList.add('show');
+            setTimeout(() => {
+                successEl.classList.remove('show');
+            }, 2000);
+        }
+
+        function clearAllCodes() {
+            if (confirm('Are you sure you want to delete all saved QR codes? This action cannot be undone.')) {
+                // You would need to implement a backend route for this
+                fetch('/clear_all_codes', {
+                    method: 'POST',
+                }).then(response => {
+                    if (response.ok) {
+                        location.reload();
+                    }
+                });
+            }
+        }
+    </script>
 </body>
 </html>

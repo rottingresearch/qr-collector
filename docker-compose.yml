@@ -1,14 +1,27 @@
 version: '3.8'
 
 services:
-  qr-collector:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    develop:
-      watch:
-        - action: rebuild
-          path: .
-    restart: unless-stopped
+  web:
+    image: ghcr.io/marshalmiller/qr-collector:latest
     ports:
-      - "5200:5000"
+      - "5000:5000"
+    environment:
+      - DATABASE_URL=postgresql://qr_user:qr_password@db:5432/qr_codes_db
+      - FLASK_ENV=production
+      - FLASK_APP=app.py
+    depends_on:
+      - db
+
+  db:
+    image: postgres:15
+    environment:
+      - POSTGRES_USER=qr_user
+      - POSTGRES_PASSWORD=qr_password
+      - POSTGRES_DB=qr_codes_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"  # Optional: expose PostgreSQL port for debugging
+
+volumes:
+  postgres_data:

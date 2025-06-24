@@ -92,5 +92,17 @@ def process_qr_code():
     return 'No QR code data found', 400
 
 
+@app.route('/clear_all_codes', methods=['POST'])
+def clear_all_codes():
+    """Clear all stored QR codes."""
+    try:
+        QRCode.query.delete()
+        db.session.commit()
+        return 'All QR codes cleared successfully', 200
+    except Exception as e:
+        db.session.rollback()
+        return f'Error clearing QR codes: {str(e)}', 500
+
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)

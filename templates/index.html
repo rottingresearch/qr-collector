@@ -4,31 +4,331 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>QR Code Scanner</title>
-    <script src="../static/html5-qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/minified/html5-qrcode.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 3rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+            backdrop-filter: blur(10px);
+        }
+
+        .scan-section {
+            text-align: center;
+        }
+
+        .scan-section h2 {
+            margin-bottom: 20px;
+            color: #4a5568;
+            font-size: 1.8rem;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 30px;
+        }
+
+        .btn {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 180px;
+            justify-content: center;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(245, 87, 108, 0.3);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        #reader {
+            margin: 20px auto;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            max-width: 500px;
+        }
+
+        .reader-container {
+            display: none;
+            text-align: center;
+        }
+
+        .reader-container.active {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .status {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 10px;
+            font-weight: 500;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .instructions {
+            background: #e8f4fd;
+            padding: 20px;
+            border-radius: 15px;
+            margin-top: 20px;
+            border-left: 4px solid #667eea;
+        }
+
+        .instructions h3 {
+            color: #2d3748;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .instructions ul {
+            color: #4a5568;
+            padding-left: 20px;
+        }
+
+        .instructions li {
+            margin-bottom: 8px;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 15px;
+            }
+
+            .header h1 {
+                font-size: 2.5rem;
+            }
+
+            .button-group {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .btn {
+                width: 100%;
+                max-width: 300px;
+            }
+        }
+    </style>
 </head>
 <body>
-    <h1>QR Code Scanner</h1>
-    <button id="start-scan">Scan with Camera</button>
-    <div id="reader" style="width:500px; display:none;"></div>
-    <br>
-    <a href="/stored_qr_codes">Stored QR Codes</a>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-qrcode"></i> QR Scanner</h1>
+            <p>Scan QR codes instantly with your camera</p>
+        </div>
+
+        <div class="card">
+            <div class="scan-section">
+                <h2>Start Scanning</h2>
+                <div class="button-group">
+                    <button id="start-scan" class="btn btn-primary">
+                        <i class="fas fa-camera"></i>
+                        Scan with Camera
+                    </button>
+                    <a href="/stored_qr_codes" class="btn btn-secondary">
+                        <i class="fas fa-list"></i>
+                        View Saved Codes
+                    </a>
+                </div>
+
+                <div class="reader-container" id="reader-container">
+                    <div id="reader"></div>
+                    <button id="stop-scan" class="btn btn-secondary" style="margin-top: 15px;">
+                        <i class="fas fa-stop"></i>
+                        Stop Scanning
+                    </button>
+                </div>
+
+                <div id="status"></div>
+            </div>
+
+            <div class="instructions">
+                <h3><i class="fas fa-info-circle"></i> How to use:</h3>
+                <ul>
+                    <li>Click "Scan with Camera" to start scanning</li>
+                    <li>Allow camera access when prompted</li>
+                    <li>Point your camera at a QR code</li>
+                    <li>The code will be automatically detected and saved</li>
+                    <li>View all saved codes by clicking "View Saved Codes"</li>
+                </ul>
+            </div>
+        </div>
+    </div>
 
     <script>
+        let html5QrcodeScanner = null;
+        let isScanning = false;
+
         document.getElementById('start-scan').addEventListener('click', function() {
-            document.getElementById('reader').style.display = 'block';
-            let html5QrcodeScanner = new Html5QrcodeScanner(
-                "reader", { fps: 10, qrbox: 250 });
+            if (isScanning) return;
+            
+            const readerContainer = document.getElementById('reader-container');
+            const startBtn = document.getElementById('start-scan');
+            const statusDiv = document.getElementById('status');
+            
+            startBtn.disabled = true;
+            statusDiv.innerHTML = '<div class="status">Initializing camera...</div>';
+            
+            readerContainer.classList.add('active');
+            
+            html5QrcodeScanner = new Html5QrcodeScanner(
+                "reader", 
+                { 
+                    fps: 10, 
+                    qrbox: { width: 250, height: 250 },
+                    aspectRatio: 1.0
+                }
+            );
+            
             html5QrcodeScanner.render(onScanSuccess, onScanFailure);
+            isScanning = true;
+            startBtn.textContent = 'Scanning...';
+            startBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Scanning...';
+        });
+
+        document.getElementById('stop-scan').addEventListener('click', function() {
+            stopScanning();
         });
 
         function onScanSuccess(decodedText, decodedResult) {
             console.log(`Code matched = ${decodedText}`, decodedResult);
-            window.location.href = `/process_qr_code?data=${encodeURIComponent(decodedText)}`;
+            
+            const statusDiv = document.getElementById('status');
+            statusDiv.innerHTML = `<div class="status success">
+                <i class="fas fa-check-circle"></i> QR Code detected! Saving...
+            </div>`;
+            
+            // Stop scanning
+            stopScanning();
+            
+            // Redirect to process the QR code
+            setTimeout(() => {
+                window.location.href = `/process_qr_code?data=${encodeURIComponent(decodedText)}`;
+            }, 1500);
         }
 
         function onScanFailure(error) {
-            console.warn(`Code scan error = ${error}`);
+            // Don't log every scan failure to avoid console spam
         }
+
+        function stopScanning() {
+            if (html5QrcodeScanner && isScanning) {
+                html5QrcodeScanner.clear();
+                html5QrcodeScanner = null;
+                isScanning = false;
+                
+                const readerContainer = document.getElementById('reader-container');
+                const startBtn = document.getElementById('start-scan');
+                const statusDiv = document.getElementById('status');
+                
+                readerContainer.classList.remove('active');
+                startBtn.disabled = false;
+                startBtn.innerHTML = '<i class="fas fa-camera"></i> Scan with Camera';
+                statusDiv.innerHTML = '';
+            }
+        }
+
+        // Handle camera permission errors
+        window.addEventListener('error', function(e) {
+            if (e.message.includes('camera') || e.message.includes('getUserMedia')) {
+                const statusDiv = document.getElementById('status');
+                statusDiv.innerHTML = `<div class="status error">
+                    <i class="fas fa-exclamation-triangle"></i> 
+                    Camera access denied. Please allow camera permissions and try again.
+                </div>`;
+                stopScanning();
+            }
+        });
     </script>
 </body>
 </html>
