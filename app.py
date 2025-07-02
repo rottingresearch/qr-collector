@@ -1,5 +1,5 @@
 import os
-from flask import Flask, request, render_template, redirect, url_for
+from flask import Flask, request, render_template, redirect, url_for, jsonify
 from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__)
@@ -83,13 +83,26 @@ def process_qr_code():
         # Check if the QR code already exists
         existing_qr_code = QRCode.query.filter_by(url=url).first()
         if existing_qr_code:
-            return 'QR code already exists', 400
+            # Check if request expects JSON (AJAX request)
+            if request.headers.get('Accept') == 'application/json':
+                return jsonify({'status': 'duplicate', 'message': 'QR code already exists'}), 200
+            else:
+                return redirect(url_for('index', duplicate='true'))
 
         new_qr_code = QRCode(url=url)
         db.session.add(new_qr_code)
         db.session.commit()
-        return redirect(url_for('stored_qr_codes'))
-    return 'No QR code data found', 400
+        
+        # Check if request expects JSON (AJAX request)
+        if request.headers.get('Accept') == 'application/json':
+            return jsonify({'status': 'success', 'message': 'QR code saved successfully'}), 200
+        else:
+            return redirect(url_for('stored_qr_codes'))
+    
+    if request.headers.get('Accept') == 'application/json':
+        return jsonify({'status': 'error', 'message': 'No QR code data found'}), 400
+    else:
+        return 'No QR code data found', 400
 
 
 @app.route('/clear_all_codes', methods=['POST'])
