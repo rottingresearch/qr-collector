@@ -4,6 +4,11 @@ from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__)
 
+# Configure MIME types for static files
+import mimetypes
+mimetypes.add_type('application/javascript', '.js')
+mimetypes.add_type('text/css', '.css')
+
 # Update the database URI to use PostgreSQL
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv(
     'DATABASE_URL')
