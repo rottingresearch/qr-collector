@@ -4,7 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Stored QR Codes</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link h        .btn-copy {
+            background: #323232;
+            color: #FFFFFF;
+        }
+
+        .btn-copy:hover {
+            background: #1a1a1a;
+        }
+
+        .empty-state {cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -123,6 +132,34 @@
             background: #FFFFFF;
             border-radius: 10px;
             border-left: 4px solid #EF3B24;
+        }
+
+        .link-status {
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .link-status.alive {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .link-status.dead {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .link-status.unchecked {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
         }
 
         .qr-meta {
@@ -268,10 +305,6 @@
                     <i class="fas fa-camera"></i>
                     Scan New Code
                 </a>
-                <button id="clear-all" class="btn btn-secondary" onclick="clearAllCodes()">
-                    <i class="fas fa-trash"></i>
-                    Clear All
-                </button>
             </div>
 
             {% if qr_codes %}
@@ -286,6 +319,22 @@
                         <div class="qr-content">
                             {{ qr_code.url }}
                         </div>
+                        {% if qr_code.link_died %}
+                        <div class="link-status dead">
+                            <i class="fas fa-times-circle"></i>
+                            Link died on {{ qr_code.link_died.strftime('%Y-%m-%d %H:%M') }}
+                        </div>
+                        {% elif qr_code.last_checked %}
+                        <div class="link-status alive">
+                            <i class="fas fa-check-circle"></i>
+                            Last checked: {{ qr_code.last_checked.strftime('%Y-%m-%d %H:%M') }}
+                        </div>
+                        {% else %}
+                        <div class="link-status unchecked">
+                            <i class="fas fa-question-circle"></i>
+                            Not yet checked
+                        </div>
+                        {% endif %}
                         <div class="qr-meta">
                             <div class="qr-timestamp">
                                 <i class="fas fa-clock"></i>
@@ -296,7 +345,7 @@
                                     <i class="fas fa-copy"></i>
                                     Copy
                                 </button>
-                                {% if qr_code.url.startswith('http') %}
+                                {% if qr_code.url.startswith('http') and not qr_code.link_died %}
                                 <a href="{{ qr_code.url }}" target="_blank" class="btn-small" style="background: #007bff; color: white;">
                                     <i class="fas fa-external-link-alt"></i>
                                     Open
@@ -353,19 +402,6 @@
             setTimeout(() => {
                 successEl.classList.remove('show');
             }, 2000);
-        }
-
-        function clearAllCodes() {
-            if (confirm('Are you sure you want to delete all saved QR codes? This action cannot be undone.')) {
-                // You would need to implement a backend route for this
-                fetch('/clear_all_codes', {
-                    method: 'POST',
-                }).then(response => {
-                    if (response.ok) {
-                        location.reload();
-                    }
-                });
-            }
         }
     </script>
 </body>

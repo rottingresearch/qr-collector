@@ -1,20 +1,21 @@
 import os
+import mimetypes
+import threading
+import time
+import requests
+from datetime import datetime, timedelta
 from flask import Flask, request, render_template, redirect, url_for, jsonify
 from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__)
 
 # Configure MIME types for static files
-import mimetypes
 mimetypes.add_type('application/javascript', '.js')
 mimetypes.add_type('text/css', '.css')
 
-# Update the database URI to use PostgreSQL
+# Update the database URI to use PostgreSQL in production, SQLite for local development
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv(
-    'DATABASE_URL')
-
-if not app.config['SQLALCHEMY_DATABASE_URI']:
-    raise RuntimeError("DATABASE_URL environment variable is not set.")
+    'DATABASE_URL', 'sqlite:///qr_codes.db')
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
@@ -30,11 +31,82 @@ class QRCode(db.Model):
     timestamp = db.Column(
         db.DateTime, nullable=False, server_default=db.func.now()
     )
+    last_checked = db.Column(db.DateTime, nullable=True)
+    link_died = db.Column(db.DateTime, nullable=True)
 
 
 # Create the database tables within the application context
 with app.app_context():
     db.create_all()
+
+
+def check_url_status(url):
+    """Check if a URL is alive using requests."""
+    try:
+        response = requests.head(url, timeout=10, allow_redirects=True)
+        # Consider 2xx and 3xx status codes as alive
+        return response.status_code < 400
+    except Exception as e:
+        try:
+            # If HEAD fails, try GET request
+            response = requests.get(url, timeout=10, allow_redirects=True)
+            return response.status_code < 400
+        except Exception as e2:
+            print(f"Error checking URL {url}: {e2}")
+            return False
+
+
+def check_all_urls():
+    """Check all URLs in the database for dead links."""
+    with app.app_context():
+        # Get all QR codes that haven't been checked today or aren't dead yet
+        today = datetime.now().date()
+        qr_codes = QRCode.query.filter(
+            db.or_(
+                QRCode.last_checked.is_(None),
+                db.func.date(QRCode.last_checked) < today,
+                db.and_(
+                    QRCode.link_died.is_(None),
+                    db.func.date(QRCode.last_checked) < today
+                )
+            )
+        ).all()
+        
+        for qr_code in qr_codes:
+            # Skip if already marked as dead
+            if qr_code.link_died:
+                continue
+                
+            print(f"Checking URL: {qr_code.url}")
+            is_alive = check_url_status(qr_code.url)
+            
+            # Update last_checked timestamp
+            qr_code.last_checked = datetime.now()
+            
+            # If URL is dead and not already marked, mark it as dead
+            if not is_alive and not qr_code.link_died:
+                qr_code.link_died = datetime.now()
+                print(f"URL marked as dead: {qr_code.url}")
+            elif is_alive:
+                print(f"URL is alive: {qr_code.url}")
+            
+            db.session.commit()
+
+
+def start_daily_url_checker():
+    """Start the daily URL checker in a background thread."""
+    def daily_checker():
+        while True:
+            print("Starting daily URL check...")
+            check_all_urls()
+            print("Daily URL check completed.")
+            # Sleep for 24 hours (86400 seconds)
+            time.sleep(86400)
+    
+    # Start the checker in a daemon thread
+    checker_thread = threading.Thread(target=daily_checker, daemon=True)
+    checker_thread.start()
+    print("Daily URL checker started.")
 
 
 @app.route('/')
@@ -69,11 +141,11 @@ def scan_qr_code():
     # Replace with actual extraction logic
 
     # Check if the QR code already exists
-    existing_qr_code = QRCode.query.filter_by(data=qr_data).first()
+    existing_qr_code = QRCode.query.filter_by(url=qr_data).first()
     if existing_qr_code:
         return 'QR code already exists', 400
 
-    new_qr_code = QRCode(data=qr_data)
+    new_qr_code = QRCode(url=qr_data)
     db.session.add(new_qr_code)
     db.session.commit()
 
@@ -110,17 +182,17 @@ def process_qr_code():
         return 'No QR code data found', 400
 
 
-@app.route('/clear_all_codes', methods=['POST'])
-def clear_all_codes():
-    """Clear all stored QR codes."""
+@app.route('/check_urls', methods=['POST'])
+def manual_check_urls():
+    """Manually trigger URL checking."""
     try:
-        QRCode.query.delete()
-        db.session.commit()
-        return 'All QR codes cleared successfully', 200
+        check_all_urls()
+        return 'URL check completed', 200
     except Exception as e:
-        db.session.rollback()
-        return f'Error clearing QR codes: {str(e)}', 500
+        return f'Error checking URLs: {str(e)}', 500
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+    # Start the daily URL checker
+    start_daily_url_checker()
+    app.run(host='0.0.0.0', port=5001, debug=True)
