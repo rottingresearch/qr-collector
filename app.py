@@ -195,4 +195,4 @@ def manual_check_urls():
 if __name__ == '__main__':
     # Start the daily URL checker
     start_daily_url_checker()
-    app.run(host='0.0.0.0', port=5001, debug=True)
+    app.run(host='0.0.0.0', port=5001)
