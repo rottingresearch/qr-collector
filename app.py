@@ -193,7 +193,7 @@ def manual_check_urls():
         check_all_urls()
         return 'URL check completed', 200
     except Exception as e:
-        logging.exception("Error checking URLs")
+        logger.exception("Error checking URLs")
         return "An internal error occurred while checking URLs.", 500
 
 
