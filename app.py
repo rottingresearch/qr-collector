@@ -6,6 +6,10 @@ import requests
 from datetime import datetime, timedelta
 from flask import Flask, request, render_template, redirect, url_for, jsonify
 from flask_sqlalchemy import SQLAlchemy
+import logging
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
 
 app = Flask(__name__)
 
@@ -194,7 +198,8 @@ def manual_check_urls():
         check_all_urls()
         return 'URL check completed', 200
     except Exception as e:
-        return f'Error checking URLs: {str(e)}', 500
+        logger.exception("Error checking URLs")
+        return "An internal error occurred while checking URLs.", 500
 
 
 if __name__ == '__main__':
