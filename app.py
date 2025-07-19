@@ -132,7 +132,12 @@ def scan_qr_code():
     if file.filename == '':
         return 'No selected file', 400
 
-    file_path = f'static/uploads/{file.filename}'
+    from werkzeug.utils import secure_filename
+    base_path = os.path.abspath('static/uploads')
+    filename = secure_filename(file.filename)
+    file_path = os.path.join(base_path, filename)
+    if not os.path.commonpath([base_path, os.path.abspath(file_path)]) == base_path:
+        return 'Invalid file path', 400
     file.save(file_path)
 
     # Process the uploaded file to extract QR code data
