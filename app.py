@@ -98,19 +98,54 @@ def check_all_urls():
 
 
 def start_daily_url_checker():
-    """Start the daily URL checker in a background thread."""
+    """Start the daily URL checker to run at midnight server time."""
     def daily_checker():
+        # Check if we should run an immediate check on startup
+        # (if no URLs have been checked today)
+        should_check_now = False
+        try:
+            with app.app_context():
+                today = datetime.now().date()
+                unchecked_count = QRCode.query.filter(
+                    db.or_(
+                        QRCode.last_checked.is_(None),
+                        db.func.date(QRCode.last_checked) < today
+                    )
+                ).count()
+                if unchecked_count > 0:
+                    should_check_now = True
+        except Exception:
+            pass  # Skip startup check if there's an error
+        
+        if should_check_now:
+            print("Running initial URL check on startup...")
+            check_all_urls()
+            print("Initial URL check completed.")
+        
         while True:
-            print("Starting daily URL check...")
+            # Calculate seconds until next midnight
+            now = datetime.now()
+            midnight = (now + timedelta(days=1)).replace(
+                hour=0, minute=0, second=0, microsecond=0
+            )
+            seconds_until_midnight = (midnight - now).total_seconds()
+            
+            midnight_str = midnight.strftime('%Y-%m-%d %H:%M:%S')
+            print(f"Next URL check scheduled for midnight: {midnight_str}")
+            print(f"Sleeping for {seconds_until_midnight:.0f} seconds...")
+            
+            # Sleep until midnight
+            time.sleep(seconds_until_midnight)
+            
+            # Run the check at midnight
+            print("Starting daily URL check at midnight...")
             check_all_urls()
             print("Daily URL check completed.")
-            # Sleep for 24 hours (86400 seconds)
-            time.sleep(86400)
     
     # Start the checker in a daemon thread
     checker_thread = threading.Thread(target=daily_checker, daemon=True)
     checker_thread.start()
-    print("Daily URL checker started.")
+    print("Daily URL checker started - will run at midnight server time.")
 
 
 @app.route('/')
@@ -198,8 +233,8 @@ def manual_check_urls():
         check_all_urls()
         return 'URL check completed', 200
     except Exception as e:
-        logger.exception("Error checking URLs")
-        return "An internal error occurred while checking URLs.", 500
+        print(f"Error checking URLs: {e}")
+        return f'Error checking URLs: {str(e)}', 500
 
 
 if __name__ == '__main__':

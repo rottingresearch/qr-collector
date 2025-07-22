@@ -290,6 +290,11 @@
         .copy-success.show {
             transform: translateX(0);
         }
+
+        .timestamp {
+            border-bottom: 1px dotted #323232;
+            cursor: help;
+        }
     </style>
 </head>
 <body>
@@ -320,14 +325,14 @@
                             {{ qr_code.url }}
                         </div>
                         {% if qr_code.link_died %}
-                        <div class="link-status dead">
+                        <div class="link-status dead" data-scan-date="{{ qr_code.timestamp.isoformat() }}" data-died-date="{{ qr_code.link_died.isoformat() }}">
                             <i class="fas fa-times-circle"></i>
-                            Link died on {{ qr_code.link_died.strftime('%Y-%m-%d %H:%M') }}
+                            <span class="days-display">Link died on {{ qr_code.link_died.strftime('%Y-%m-%d %H:%M') }}</span>
                         </div>
                         {% elif qr_code.last_checked %}
-                        <div class="link-status alive">
+                        <div class="link-status alive" data-scan-date="{{ qr_code.timestamp.isoformat() }}">
                             <i class="fas fa-check-circle"></i>
-                            Last checked: {{ qr_code.last_checked.strftime('%Y-%m-%d %H:%M') }}
+                            <span class="days-display">Last checked: {{ qr_code.last_checked.strftime('%Y-%m-%d %H:%M') }}</span>
                         </div>
                         {% else %}
                         <div class="link-status unchecked">
@@ -338,7 +343,7 @@
                         <div class="qr-meta">
                             <div class="qr-timestamp">
                                 <i class="fas fa-clock"></i>
-                                {{ qr_code.timestamp.strftime('%Y-%m-%d %H:%M') }}
+                                <span class="timestamp" data-timestamp="{{ qr_code.timestamp.isoformat() }}">{{ qr_code.timestamp.strftime('%Y-%m-%d %H:%M') }}</span>
                             </div>
                             <div class="qr-actions">
                                 <button class="btn-small btn-copy" onclick="copyToClipboard('{{ qr_code.url }}')">
@@ -403,6 +408,116 @@
                 successEl.classList.remove('show');
             }, 2000);
         }
+
+        function convertTimestampsToLocalTime() {
+            const timestamps = document.querySelectorAll('.timestamp[data-timestamp]');
+            const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+            
+            timestamps.forEach(timestamp => {
+                const isoString = timestamp.getAttribute('data-timestamp');
+                if (isoString) {
+                    try {
+                        // Parse the server timestamp (assuming it's in server timezone)
+                        const serverDate = new Date(isoString);
+                        
+                        // Format in user's local timezone
+                        const localTime = serverDate.toLocaleString(undefined, {
+                            year: 'numeric',
+                            month: '2-digit',
+                            day: '2-digit',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            hour12: false
+                        });
+                        
+                        timestamp.textContent = localTime;
+                        timestamp.title = `Your local time (${userTimezone})`;
+                    } catch (error) {
+                        console.error('Error converting timestamp:', error);
+                        // Keep the original timestamp if conversion fails
+                    }
+                }
+            });
+        }
+
+        function calculateDaysAndUpdateDisplay() {
+            // Update status displays to show days
+            const statusElements = document.querySelectorAll('.link-status[data-scan-date]');
+            
+            statusElements.forEach(element => {
+                const scanDateStr = element.getAttribute('data-scan-date');
+                const diedDateStr = element.getAttribute('data-died-date');
+                const daysDisplay = element.querySelector('.days-display');
+                
+                if (!scanDateStr || !daysDisplay) return;
+                
+                try {
+                    const scanDate = new Date(scanDateStr);
+                    const now = new Date();
+                    
+                    // Format scan date for tooltip
+                    const scanDateFormatted = scanDate.toLocaleString(undefined, {
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        hour12: false
+                    });
+                    
+                    if (diedDateStr) {
+                        // Link is dead - show how many days it was active
+                        const diedDate = new Date(diedDateStr);
+                        const daysActive = Math.floor((diedDate - scanDate) / (1000 * 60 * 60 * 24));
+                        
+                        const diedDateFormatted = diedDate.toLocaleString(undefined, {
+                            year: 'numeric',
+                            month: '2-digit',
+                            day: '2-digit',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            hour12: false
+                        });
+                        
+                        if (daysActive === 0) {
+                            daysDisplay.textContent = 'Link died on the same day it was scanned';
+                        } else if (daysActive === 1) {
+                            daysDisplay.textContent = 'Link was active for 1 day';
+                        } else {
+                            daysDisplay.textContent = `Link was active for ${daysActive} days`;
+                        }
+                        
+                        daysDisplay.title = `Scanned: ${scanDateFormatted}\nDied: ${diedDateFormatted}`;
+                    } else {
+                        // Link is alive - show how many days since first scan
+                        const daysSinceScan = Math.floor((now - scanDate) / (1000 * 60 * 60 * 24));
+                        
+                        if (daysSinceScan === 0) {
+                            daysDisplay.textContent = 'Scanned today';
+                        } else if (daysSinceScan === 1) {
+                            daysDisplay.textContent = 'Active for 1 day';
+                        } else {
+                            daysDisplay.textContent = `Active for ${daysSinceScan} days`;
+                        }
+                        
+                        daysDisplay.title = `Scanned: ${scanDateFormatted}`;
+                    }
+                    
+                    // Add visual indicator that this element has a tooltip
+                    daysDisplay.style.cursor = 'help';
+                    daysDisplay.style.borderBottom = '1px dotted currentColor';
+                } catch (error) {
+                    console.error('Error calculating days:', error);
+                    // Keep the original display if calculation fails
+                }
+            });
+        }
+
+        // Convert timestamps and calculate days when the page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            convertTimestampsToLocalTime();
+            calculateDaysAndUpdateDisplay();
+        });
     </script>
 </body>
 </html>
