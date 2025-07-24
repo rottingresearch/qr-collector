@@ -233,8 +233,8 @@ def manual_check_urls():
         check_all_urls()
         return 'URL check completed', 200
     except Exception as e:
-        print(f"Error checking URLs: {e}")
-        return f'Error checking URLs: {str(e)}', 500
+        logging.error(f"Error checking URLs: {e}", exc_info=True)
+        return 'An internal error occurred while checking URLs.', 500
 
 
 if __name__ == '__main__':
