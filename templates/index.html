@@ -11,7 +11,6 @@
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-        }
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -377,24 +376,29 @@
             .then(data => {
                 if (data.status === 'duplicate') {
                     showPopupBanner(data.message, 'duplicate');
-                    // Don't stop scanning, keep the camera active
-                    statusDiv.innerHTML = '';
+                    // Clear the status and continue scanning
+                    setTimeout(() => {
+                        statusDiv.innerHTML = '';
+                    }, 2000);
                 } else if (data.status === 'success') {
                     showPopupBanner(data.message, 'success');
-                    // Stop scanning and redirect after showing banner
-                    stopScanning();
+                    // Clear the status and continue scanning (don't stop or redirect)
                     setTimeout(() => {
-                        window.location.href = '/stored_qr_codes';
+                        statusDiv.innerHTML = '';
                     }, 2000);
                 } else {
                     showPopupBanner('Error saving QR code', 'error');
-                    statusDiv.innerHTML = '';
+                    setTimeout(() => {
+                        statusDiv.innerHTML = '';
+                    }, 2000);
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
                 showPopupBanner('Error processing QR code', 'error');
-                statusDiv.innerHTML = '';
+                setTimeout(() => {
+                    statusDiv.innerHTML = '';
+                }, 2000);
             });
         }
 
