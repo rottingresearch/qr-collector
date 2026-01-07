@@ -37,3 +37,4 @@ google-services.json
 /.venv
 .venv/
 .venv/*
+.DS_Store
